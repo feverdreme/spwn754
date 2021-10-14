@@ -1,0 +1,48 @@
+impl @mfloat {
+    to_754: (n: @number) {
+        let n = n
+
+        sign = 0 if n >= 0 else 1
+        whole_part = $.floor($.abs(n))
+        frac_part  = $.fract($.abs(n))
+
+        // convert them to bit arrays
+        [bits_whole, whole_magnitude]       = @mfloat::integer_to_binary(whole_part)
+        [bits_frac, frac_magnitude_offset]  = @mfloat::decimal_to_binary(frac_part)
+
+        let bits_mantissa = []
+
+        if whole_part == 0 {
+            // only using the regularized fractional bits to make mantissa
+            bits_mantissa = bits_frac
+        } else {
+            // there's a whole number, meaning that the decimal point is fixed somewhere else
+            bits_mantissa = bits_whole + ([0] * frac_magnitude_offset) + bits_frac
+        }
+
+        // remove leading 1 (is implicit in the 754 standard)
+        bits_mantissa.pop(0)
+        // trim the precision
+        if bits_mantissa.length > 23 {
+            bits_mantissa = bits_mantissa[:23]
+        }
+        bits_mantissa = @mfloat::bits_rpad(bits_mantissa, 23)
+
+        let exponent = 127
+        let bits_exponent = []
+
+        if whole_part == 0 {
+            exponent -= frac_magnitude_offset + 1 // because its a pure fraction
+        }
+        else {
+            exponent += whole_magnitude
+        }
+
+        bits_exponent = @mfloat::integer_to_binary(exponent)
+        bits_exponent = @mfloat::bits_lpad(bits_exponent[0], 8)
+
+        bits_final = [sign] + bits_exponent + bits_mantissa
+
+        return bits_final
+    }
+} 

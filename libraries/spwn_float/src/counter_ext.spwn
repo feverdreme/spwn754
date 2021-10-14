@@ -1,0 +1,22 @@
+impl @counter {
+    _pow_: (self, exponent: @counter) {
+        // binary exponentiation
+        leftover = counter(1, self.bits) // when the exponent is odd, to decrement and multiply to here
+        powertree = self.clone() // squares itself
+
+        // loop binary until you can square, and have to do iterative multiply
+        while_loop(() => exponent != 0, () {
+            if exponent % 2 == 0 {
+                powertree *= powertree
+                exponent /= 2
+
+            } else {
+                leftover *= powertree
+                powertree *= powertree
+                exponent = (exponent - 1) / 2
+            }
+        })
+
+        return counter(leftover * powertree, bits = self.bits)
+    }
+}

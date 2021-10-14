@@ -1,0 +1,70 @@
+#[cache_output]
+
+impl @mfloat {
+    MAX_SINGLE: (2 - 2 ** (-23)) * 2 ** 127,
+
+    is_inrange: (n: @number) {
+        return $.abs(n) <= @mfloat::MAX_SINGLE
+    },
+
+    bits_lpad: (bits: [@number], num_digits: @number) {
+        return [0] * (num_digits - bits.length) + bits
+    },
+
+    bits_rpad: (bits: [@number], num_digits: @number) {
+        return bits + [0] * (num_digits - bits.length)
+    },
+
+    integer_to_binary: (n: @number) {
+        let bits = []
+        let n = n // shadow
+
+        while n > 1 {
+            bits.push(n % 2)
+            n = $.floor(n / 2)
+        }
+
+        bits.push(n)
+
+        return [bits.reverse(), bits.length - 1] // returns both the bit array and the magnitude to use later for exp calculations
+    },
+
+    decimal_to_binary: (d: @number, max_precision: @number = 24) {
+        if !(d < 1 && d >= 0) {
+            throw "Decimal provided MUST be 0 <= n < 1 – provided {}".fmt(d)
+        }
+        if d == 0 {
+            return [[], 0]
+        }
+
+        let bits = []
+        let d = d
+        let magnitude_offset = 0
+
+        // regularizes the decimal if you don't want leading zeros
+        while d < 0.1 {
+            d *= 10
+            magnitude_offset++
+        }
+
+        // using algorithm to get binary representation
+        for i in ..max_precision {
+            d *= 2
+            bits.push($.floor(d))
+
+            d = $.fract(d)
+
+            if d == 0 {
+                break
+            }
+        }
+
+        // make final regularlization
+        while bits[0] == 0 {
+            magnitude_offset++
+            bits.pop(0)
+        }
+
+        return [bits, magnitude_offset]
+    }
+}

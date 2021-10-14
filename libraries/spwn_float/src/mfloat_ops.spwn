@@ -1,0 +1,10 @@
+impl @mfloat {
+    _as_: (self, to_type: @type_indicator) {
+        throw "This hasnt been impled yet"
+        // if to_type != @number {
+        //     throw "Error: can only convert to type @number, was asked to convert to type {}".fmt(to_type)
+        // }
+
+        // return @mfloat::to_dec(self.bits)
+    }
+}

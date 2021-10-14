@@ -1,0 +1,62 @@
+import "mfloat_const.spwn"
+counter = import std.counter
+
+EXPONENT_BIT_OFFSET = 1
+EXPONENT_BIT_SIZE = 8
+MANTISSA_BIT_OFFSET = 9
+MANTISSA_BIT_SIZE = 23
+
+impl @mfloat {
+    to_dec: (bits: [@counter], num_bits = 16) {
+        // returns counter.... agggg
+        result = counter(0, bits = num_bits)
+        exponent = counter(0, bits = 8)
+        mantissa = counter(0, bits = 24) // this has to be applied after exponent because floats cant exist in runtime
+
+        for_loop(..8, (i) {
+            exponent += bits[EXPONENT_BIT_OFFSET + EXPONENT_BIT_SIZE - (i + 1)] * @mfloat::precomputed::pow2[i]
+        })
+
+        /* 
+            cuts decimal off based on exponent (floors the result basically)
+            if you dont want this to happen then ceil the 754 object before converting 
+        */
+        if exponent < 127 {
+            result -= result // speed optimization?
+        } else if exponent == 127 {
+            result = 1 // were gonna ignore weird cases like 0**0
+        } else {
+            exponent -= 127
+        }
+
+        if exponent >= 23 {
+            for_loop(..23, (i) {
+                mantissa += bits[MANTISSA_BIT_OFFSET + MANTISSA_BIT_SIZE - (i + 1)] * @mfloat::precomputed::pow2[i]
+            })
+
+            result += @mfloat::precomputed::pow2[23] + mantissa
+            
+        } else {
+            exponent.to_const_enclosed(1..23, (mantissa_size) {
+                for_loop (..mantissa_size, (i) {
+                    mantissa += bits[MANTISSA_BIT_OFFSET + mantissa_size - i] * @mfloat::precomputed::pow2[i]
+                }) 
+
+                result += @mfloat::precomputed::pow2[mantissa_size] + mantissa
+            })
+        }
+
+        // apply the necesary exponent scaling
+        if exponent > 23 {
+            exponent -= 23
+
+            // FIXME: turn to for loop
+            while_loop(() => exponent > 0, () {
+                result *= 2
+                exponent--
+            })
+        }
+
+        return result
+    }, 
+}

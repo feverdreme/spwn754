@@ -1,0 +1,23 @@
+counter = (import std).counter
+
+impl @mfloat {
+    new: (value: @number) {
+        // will only do 32 bit
+        let data = []
+        
+        if @mfloat::is_inrange(value) {
+            data = @mfloat::to_754(value)
+        } else if data > 0 {
+            data = @mfloat::inf
+        } else {
+            data = @mfloat::ninf
+        }
+
+        data = data.map(bit => @bool(bit)).map(bit => counter(bit, bits = 1))
+
+        return {
+            type: @mfloat,
+            bits: data
+        }
+    }
+}
